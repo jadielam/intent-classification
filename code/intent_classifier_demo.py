@@ -7,25 +7,59 @@ import sys
 import csv
 
 import torch
+from torch.autograd import Variable
 import torchtext.data as data
 import pycrfsuite
 
+from text_dl.modules.embeddings import MultiEmbedding
 from text_dl.inference import fields_factory
-from text_dl.modules.embeddings import embedding_factory
 from text_dl.models import models_factory
 from text_dl.common.devices import use_cuda
 
 from datasets import load_windows, load_articles, generate_examples, Article, Window
 import features.features as features
 
+def pad_batches(batches):
+
+    # assuming trailing dimensions and type of all the Variables
+    # in sequences are same and fetching those from sequences[0]
+    max_seq_len = 0
+    for _, batch in enumerate(batches):
+        if max_seq_len < batch.size()[0]:
+            max_seq_len = batch.size()[0]
+    
+    out_batches = []
+    
+    for _, batch in enumerate(batches):
+        out_dims = list(batch.size())
+        length = out_dims[0]
+        out_dims[0] = max_seq_len
+        out_batch = Variable(batch.data.new(*out_dims).fill_(1))
+        out_batch[:length, :] = batch
+        out_batches.append(out_batch)
+
+    return out_batches
+
+def embedding_factory(vocabularies_l):
+    vocab_sizes = [vocab.vectors.shape[0] for vocab in vocabularies_l]
+    hidden_sizes = [vocab.vectors.shape[1] for vocab in vocabularies_l]
+    vectors = [vocab.vectors for vocab in vocabularies_l]
+    are_trainable = [False for vocab in vocabularies_l]
+
+    return MultiEmbedding(vocab_sizes, hidden_sizes, vectors, are_trainable)
+
+def input_transform_f(batch):
+    [batch.text, batch.ner] = pad_batches([batch.text, batch.ner])
+    stacked = torch.stack([batch.text, batch.ner], 2)
+    return stacked
 
 #TODO: FOr now I will do this here. Later I will redraw it to
 #something better.  Pytorch text is not designed to help you 
 #out with the first pipeline for training and for testing
 #so I need to change that.
-def transform_query(query_text, name_field_t, dataset):
+def transform_query(query_text, tags_text, name_textfield_t, name_tagfield_t, dataset):
     #1. Create example from query text
-    example = data.Example.fromlist([query_text], [name_field_t])
+    example = data.Example.fromlist([query_text, tags_text], [name_textfield_t, name_tagfield_t])
     examples = [example]
 
     #2. Create batch using example and dataset
@@ -75,8 +109,8 @@ def main():
     model_config = original_conf['model']
     generator_config = original_conf['generator']
     
-    vocabulary, (name, text_field), dataset = fields_factory(generator_config)
-    embedding = embedding_factory(vocabulary, train_embedding = False)
+    text_vocabulary, ner_vocabulary, (name1, text_field), (name2, ner_field), dataset = fields_factory(generator_config)
+    embedding = embedding_factory([text_vocabulary, ner_vocabulary])
     model_config['params']['embedding'] = embedding
     del model_config['params']['train_embedding']
 
@@ -113,8 +147,9 @@ def main():
         if query_text == "exit":
             break
         tags = get_query_ner_tags(query_text, tagger, feature_generators, skip_chain_left, skip_chain_right)
-        batch = transform_query([query_text, tags], [(name1, text_field), (name2, tag_field)], dataset)
-        prediction = model.forward(batch.text)
+        batch = transform_query(query_text, tags, (name1, text_field), (name2, ner_field), dataset)
+        input_t = input_transform_f(batch)
+        prediction = model.forward(input_t)
         maximum = torch.max(prediction, 1)
         arg_max = maximum[1][0]
         arg_max = arg_max.data.item()
