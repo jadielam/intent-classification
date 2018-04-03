@@ -58,11 +58,12 @@ RUN pip install scikit-learn
 
 # Add code to folder
 RUN mkdir -p /src
-ADD deep_learning_text/code /src/deep_learning_text
-ENV PYTHONPATH='$PYTHONPATH:/src/deep_learning_text'
-ADD ontology-ner/code /src/ontology-ner
-ENV PYTHONPATH='$PYTHONPATH:/src/ontology-ner'
 ADD code /src/intent-classification
+ADD deep_learning_text /src/deep_learning_text
+ENV PYTHONPATH='$PYTHONPATH:/src/deep_learning_text/code'
+ADD ontology-ner /src/ontology-ner
+ENV PYTHONPATH='$PYTHONPATH:/src/ontology-ner/code'
+
 
 #EXPOSE 8888
 #ENTRYPOINT ["/bin/bash", "-c", "jupyter notebook --ip='*' --allow-root --no-browser --port=8888"]
