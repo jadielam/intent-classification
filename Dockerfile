@@ -60,9 +60,8 @@ RUN pip install scikit-learn
 RUN mkdir -p /src
 ADD code /src/intent-classification
 ADD deep_learning_text /src/deep_learning_text
-ENV PYTHONPATH='$PYTHONPATH:/src/deep_learning_text/code'
 ADD ontology-ner /src/ontology-ner
-ENV PYTHONPATH='$PYTHONPATH:/src/ontology-ner/code'
+ENV PYTHONPATH='$PYTHONPATH:/src/ontology-ner/code:/src/deep_learning_text/code'
 
 
 #EXPOSE 8888

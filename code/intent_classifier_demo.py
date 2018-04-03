@@ -95,8 +95,10 @@ def main():
     with open(sys.argv[1]) as f:
         conf = json.load(f)
     
-    cl_conf = conf['cl_conf']
-    ner_conf = conf['ner_conf']
+    with open(conf['cl_file']) as f:
+        cl_conf = json.load(f)
+    with open(conf['ner_file']) as f:
+        ner_conf = json.load(f)
 
     #1. Load classification model
     model_weights_path = cl_conf['model_weights_path']
