@@ -1,0 +1,6 @@
+[submodule "deep_learning_text"]
+	path = deep_learning_text
+	url = https://github.com/jadielam/deep_learning_text
+[submodule "ontology-ner"]
+	path = ontology-ner
+	url = https://github.com/jadielam/ontology-ner

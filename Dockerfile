@@ -21,7 +21,6 @@ RUN apt-get update && apt-get install -y --allow-downgrades --no-install-recomme
          libpng-dev &&\
      rm -rf /var/lib/apt/lists/*
 
-
 ENV PYTHON_VERSION=3.6
 RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
      chmod +x ~/miniconda.sh && \
@@ -62,7 +61,6 @@ ADD code /src/intent-classification
 ADD deep_learning_text /src/deep_learning_text
 ADD ontology-ner /src/ontology-ner
 ENV PYTHONPATH='$PYTHONPATH:/src/ontology-ner/code:/src/deep_learning_text/code'
-
 
 #EXPOSE 8888
 #ENTRYPOINT ["/bin/bash", "-c", "jupyter notebook --ip='*' --allow-root --no-browser --port=8888"]
