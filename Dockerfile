@@ -51,6 +51,7 @@ RUN pip install nltk
 RUN pip install python-crfsuite gensim
 RUN python -m nltk.downloader perluniprops nonbreaking_prefixes averaged_perceptron_tagger
 RUN pip install scikit-learn
+RUN pip install flask
 
 #WORKDIR /workspace
 #RUN chmod -R a+w /workspace
