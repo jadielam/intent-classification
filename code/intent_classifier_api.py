@@ -5,6 +5,7 @@ import os
 import json
 import sys
 import csv
+import io
 
 from flask import Flask, jsonify, request, make_response
 import json
@@ -145,7 +146,7 @@ def classify_sentence_factory(conf):
                                 lda_window_right_size = 5)
     
     def classify_sentence(query_text):
-        query_text = query_text.tolower()
+        query_text = query_text.lower()
         tags = get_query_ner_tags(query_text, tagger, feature_generators, skip_chain_left, skip_chain_right)
         batch = transform_query(query_text, tags, (name1, text_field), (name2, ner_field), dataset)
         input_t = input_transform_f(batch)
@@ -197,8 +198,17 @@ def intents_classify():
         
         stream.seek(0)
         sentences = stream.read().split("\n")
-        intents = [classify_sentence(s) for s in sentences]
-        result = "\n".join(["{},{}".format(s, i) for s, i in zip(sentences, intents)])
+        sentences = [s for s in sentences if len(s) > 0]
+        sentence_intent_pairs = []
+        
+        for s in sentences:
+            try:
+                intent = classify_sentence(s)
+                sentence_intent_pairs.append((s, intent))
+            except:
+                continue
+        
+        result = "\n".join(["{},{}".format(s, i) for s, i in sentence_intent_pairs])
         resp = make_response(result)
         resp.status_code = 200
         resp.headers['Content-Disposition'] = 'attrachment; filename=result.csv'
