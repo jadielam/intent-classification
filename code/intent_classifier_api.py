@@ -6,11 +6,10 @@ import json
 import sys
 import csv
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 import json
 import signal
 import sys
-import imageio
 import base64
 
 import torch
@@ -185,6 +184,24 @@ def intent_classify():
         }
         resp = jsonify(to_return)
         resp.status_code = 200
+        return resp
+
+@app.route('/intents', methods = ['POST'])
+def intents_classify():
+    if request.method == 'POST':
+        f = request.files['data_file']
+        if not f:
+            return "No file"
+        stream = io.StringIO(f.stream.read().decode("UTF8"), newline = None)
+        csv_input = csv.reader(stream)
+        
+        stream.seek(0)
+        sentences = stream.read().split("\n")
+        intents = [classify_sentence(s) for s in sentences]
+        result = "\n".join(["{},{}".format(s, i) for s, i in zip(sentences, intents)])
+        resp = make_response(result)
+        resp.status_code = 200
+        resp.headers['Content-Disposition'] = 'attrachment; filename=result.csv'
         return resp
 
 if __name__ == "__main__":
